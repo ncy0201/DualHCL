@@ -255,7 +255,7 @@ if __name__ == "__main__":
         'Precision@25', 'Precision@30', 'time']
     print(metrics)
     results = dict.fromkeys(('Acc', 'MRR', 'AUC', 'Hit', 'Precision@1', 'Precision@5', 'Precision@10', 'Precision@15', \
-        'Precision@20', 'Precision@25', 'Precision@30', 'time'), 0) # save results
+        'Precision@20', 'Precision@25', 'Precision@30', 'time'), 0.0) # save results
     args = parse_args()
     # two graphs
     s_adj = get_adj(args.s_edge)

@@ -18,7 +18,7 @@ def set_seed(seed):
         torch.cuda.manual_seed(seed)
         torch.cuda.manual_seed_all(seed)
 
-def get_edgeindex(edgepath:str)->torch.tensor:
+def get_edgeindex(edgepath:str)->torch.Tensor:
     '''return pyG version of edge_index'''
     edgelist=np.loadtxt(edgepath)
     edge = np.unique(np.sort(edgelist, axis=1), axis=0).T
@@ -36,62 +36,28 @@ def get_gt_matrix(path,shape):
             gt[int(s),int(t)] = 1
     return gt
 
-def get_dual_hyper(g: nx.Graph, x: torch.tensor)->Data:
+def get_dual_hyper(g: nx.Graph, x: torch.Tensor)->Data:
     '''return dual hypergraph'''
     hyper_edge = torch.tensor(list(g.edges())).view(1,-1)
     hyper_node = torch.arange(0, g.number_of_edges(),1).repeat_interleave(2).view(1,-1)
     hyper_index = torch.cat([hyper_node,hyper_edge],dim=0).long()
     node_edge_map = torch.tensor(list(g.edges()), dtype=torch.long)
-    # x = torch.FloatTensor(x)
-    # x = F.normalize(x, p=2, dim=1)
     hyper_x = x[node_edge_map[:, 0]] * x[node_edge_map[:, 1]]
     hyper_x = F.normalize(hyper_x, p=2, dim=1)
     pyg_hyper = Data(x=hyper_x, edge_index=hyper_index, label=node_edge_map)
     return pyg_hyper
 
-# def get_linegraph(g: nx.Graph)->nx.Graph:
-#     '''return line graph'''
-#     lg = nx.line_graph(g)
-#     for i, node in enumerate(lg.nodes()):
-#         # 保存节点的映射关系
-#         lg.nodes[node]['label'] = torch.tensor(node, dtype=torch.long)
-#     return lg
-
-# def node_to_edge(l: nx.Graph, x: np.ndarray)->np.ndarray:
-#     '''get edge feature from node feature'''
-#     edge = np.array(list(l.nodes()))
-#     s, t = edge[:, 0], edge[:, 1]
-#     x = x[s] * x[t]
-#     return x
-
-
-# def nx_to_pyg(g: nx.graph, x: np.ndarray)->Data:
-#     '''return pyG version of graph'''
-#     x = torch.FloatTensor(x)
-#     # x = F.normalize(x, p=2, dim=1) # L2 normalization
-#     for i, node in enumerate(g.nodes()):    
-#         g.nodes[node]['x'] = x[i]
-#     pyg = from_networkx(g)
-#     if hasattr(pyg, 'weight'):
-#         del pyg.weight
-#     return pyg
-
-def nx_to_pyg(g: nx.graph, x: np.ndarray)->Data:
+def nx_to_pyg(g: nx.Graph, x: np.ndarray)->Data:
     '''return pyG version of graph'''
-    x = torch.FloatTensor(x)
+    x_t = torch.FloatTensor(x)
     edge = np.array(list(g.edges())).T
     edge_index=torch.LongTensor(edge)
     edge_index_u=torch.vstack((edge_index[1],edge_index[0]))
     edge_index=torch.hstack((edge_index,edge_index_u))
-    # for i, node in enumerate(g.nodes()):    
-    #     g.nodes[node]['x'] = x[i]
-    # pyg = from_networkx(g)
-    # if hasattr(pyg, 'weight'):
-    #     del pyg.weight
-    pyg = Data(x=x, edge_index=edge_index)
+    pyg = Data(x=x_t, edge_index=edge_index)
     return pyg
 
-def get_adj(edgepath:str)->np.array:
+def get_adj(edgepath:str)->np.ndarray:
     '''return adjacency matrix'''
     g = nx.read_edgelist(edgepath,nodetype=int)
     assert max(g.nodes())+1 == g.number_of_nodes(), "Graph contains isoload nodes"
@@ -102,7 +68,7 @@ def get_adj(edgepath:str)->np.array:
     adjacency = nx.to_numpy_array(g, nodelist=sorted(g.nodes()))
     return adjacency
 
-def load_embeddings(filename:str)->np.array:
+def load_embeddings(filename:str)->np.ndarray:
     '''load node embedding'''
     fin = open(filename, 'r')
     node_num, size = [int(x) for x in fin.readline().strip().split()]
